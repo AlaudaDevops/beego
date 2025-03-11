@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -96,7 +97,8 @@ func (fs *FileSessionStore) SessionRelease(w http.ResponseWriter) {
 			return
 		}
 	} else if os.IsNotExist(err) {
-		f, err = os.Create(path.Join(filepder.savePath, string(fs.sid[0]), string(fs.sid[1]), fs.sid))
+		filename := path.Join(filepder.savePath, string(fs.sid[0]), string(fs.sid[1]), fs.sid)
+		f, err = os.OpenFile(filename, os.O_RDWR|os.O_CREATE|syscall.O_NOFOLLOW, 0600)
 		if err != nil {
 			SLogger.Println(err)
 			return
@@ -272,7 +274,7 @@ func (fp *FileProvider) SessionRegenerate(oldsid, sid string) (Store, error) {
 	}
 
 	// if old sid file not exist, just create new sid file and return
-	newf, err := os.Create(newSidFile)
+	newf, err := os.OpenFile(newSidFile, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600)
 	if err != nil {
 		return nil, err
 	}
